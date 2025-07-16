@@ -4,12 +4,13 @@ A comprehensive demonstration of the Web Speech API using React, TypeScript, and
 
 ## 🚀 Features
 
-### Speech Recognition
+### Speech Recognition (Speech-to-Text)
 - Real-time speech-to-text conversion
 - Continuous recognition with interim results
 - Clear visual feedback for listening status
 - Transcript management with timestamps
 - Error handling and browser compatibility checks
+- **Custom `useSpeechRecognition` hook for reusability**
 
 ### Speech Synthesis (Text-to-Speech)
 - Convert text to natural-sounding speech
@@ -17,12 +18,19 @@ A comprehensive demonstration of the Web Speech API using React, TypeScript, and
 - Adjustable speech parameters (rate, pitch, volume)
 - Playback controls (play, pause, resume, stop)
 - Real-time status indicators
+- **Custom `useSpeechSynthesis` hook for reusability**
 
 ### Voice Commands Demo
 - Interactive voice command recognition
 - Visual feedback through background color changes
 - Demonstrates practical use of the speech recognition hook
 - Simple command parsing system
+
+### Text Reader Demo
+- Article reader with navigation controls
+- Variable reading speeds (slow, normal, fast)
+- Auto-advance feature for hands-free reading
+- Demonstrates practical use of the speech synthesis hook
 
 ## 🛠️ Tech Stack
 
@@ -59,9 +67,11 @@ src/
 ├── components/
 │   ├── SpeechRecognition.tsx    # Main speech recognition component
 │   ├── SpeechSynthesis.tsx      # Text-to-speech component
-│   └── VoiceCommandDemo.tsx     # Voice command demonstration
+│   ├── VoiceCommandDemo.tsx     # Voice command demonstration
+│   └── TextReaderDemo.tsx       # Article reader demonstration
 ├── hooks/
-│   └── useSpeechRecognition.ts  # Reusable speech recognition hook
+│   ├── useSpeechRecognition.ts  # Reusable speech recognition hook
+│   └── useSpeechSynthesis.ts    # Reusable speech synthesis hook
 ├── types/
 │   └── speech.d.ts              # TypeScript definitions for Web Speech API
 ├── App.tsx                      # Main application component
@@ -98,14 +108,51 @@ const MyComponent = () => {
 };
 ```
 
+### Using the Speech Synthesis Hook
+
+```typescript
+import { useSpeechSynthesis } from './hooks/useSpeechSynthesis';
+
+const MyComponent = () => {
+  const {
+    speak,
+    cancel,
+    pause,
+    resume,
+    speaking,
+    paused,
+    supported,
+    voices,
+    error,
+  } = useSpeechSynthesis({
+    rate: 1,
+    pitch: 1,
+    volume: 1,
+  });
+
+  // Speak text
+  const handleSpeak = () => {
+    speak('Hello world!');
+  };
+
+  // Your component logic here
+};
+```
+
 ### Configuration Options
 
-The `useSpeechRecognition` hook accepts the following options:
-
+**`useSpeechRecognition` options:**
 - `continuous` (boolean): Keep recognizing speech continuously
 - `interimResults` (boolean): Get results while speaking
 - `lang` (string): Language code (e.g., 'en-US', 'es-ES')
 - `maxAlternatives` (number): Maximum number of alternative transcripts
+
+**`useSpeechSynthesis` options:**
+- `rate` (number): Speech rate (0.5 to 2)
+- `pitch` (number): Voice pitch (0 to 2)
+- `volume` (number): Speech volume (0 to 1)
+- `voice` (SpeechSynthesisVoice): Specific voice to use
+- `lang` (string): Language code
 
 ## 🌐 Browser Compatibility
 
@@ -179,6 +226,18 @@ This project is open source and available under the MIT License.
 - Some browsers require HTTPS for speech recognition
 - Voice availability varies by operating system and browser
 
+## 🔍 Key Differences: Speech Recognition vs Speech Synthesis
+
+- **Speech Recognition** (Speech-to-Text): Converts spoken words into text
+  - Listens through microphone
+  - Transcribes human speech
+  - Use cases: Voice typing, voice commands
+
+- **Speech Synthesis** (Text-to-Speech): Converts text into spoken words
+  - Speaks through speakers
+  - Generates synthetic speech
+  - Use cases: Screen readers, audiobooks
+
 ## 💡 Tips
 
 1. **For best recognition results:**
@@ -195,3 +254,4 @@ This project is open source and available under the MIT License.
    - Use Chrome DevTools for debugging
    - Test on multiple devices and browsers
    - Consider implementing fallbacks for unsupported browsers
+   - The custom hooks make it easy to add speech features to any component
