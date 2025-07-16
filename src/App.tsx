@@ -2,9 +2,10 @@ import { useState } from 'react';
 import { SpeechRecognitionComponent } from './components/SpeechRecognition';
 import { SpeechSynthesisComponent } from './components/SpeechSynthesis';
 import { VoiceCommandDemo } from './components/VoiceCommandDemo';
+import { TextReaderDemo } from './components/TextReaderDemo';
 import './App.css';
 
-type TabType = 'recognition' | 'synthesis' | 'commands';
+type TabType = 'recognition' | 'synthesis' | 'commands' | 'reader';
 
 function App() {
   const [activeTab, setActiveTab] = useState<TabType>('recognition');
@@ -35,6 +36,12 @@ function App() {
         >
           Voice Commands
         </button>
+        <button
+          className={`tab-button ${activeTab === 'reader' ? 'active' : ''}`}
+          onClick={() => setActiveTab('reader')}
+        >
+          Text Reader
+        </button>
       </nav>
 
       <main className="app-content">
@@ -43,8 +50,10 @@ function App() {
             <SpeechRecognitionComponent />
           ) : activeTab === 'synthesis' ? (
             <SpeechSynthesisComponent />
-          ) : (
+          ) : activeTab === 'commands' ? (
             <VoiceCommandDemo />
+          ) : (
+            <TextReaderDemo />
           )}
         </div>
       </main>

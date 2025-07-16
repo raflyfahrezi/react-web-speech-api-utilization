@@ -1,113 +1,55 @@
-import { useState, useEffect, useCallback } from 'react';
-
-interface Voice {
-  name: string;
-  lang: string;
-  voiceURI: string;
-  localService: boolean;
-  default: boolean;
-}
+import { useState } from 'react';
+import { useSpeechSynthesis } from '../hooks/useSpeechSynthesis';
 
 export const SpeechSynthesisComponent = () => {
   const [text, setText] = useState('');
-  const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([]);
-  const [selectedVoice, setSelectedVoice] = useState<string>('');
+  const [selectedVoice, setSelectedVoice] = useState<SpeechSynthesisVoice | null>(null);
   const [rate, setRate] = useState(1);
   const [pitch, setPitch] = useState(1);
   const [volume, setVolume] = useState(1);
-  const [isSpeaking, setIsSpeaking] = useState(false);
-  const [isPaused, setIsPaused] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (!('speechSynthesis' in window)) {
-      setError('Speech synthesis is not supported in this browser.');
-      return;
-    }
+  const {
+    speak,
+    cancel,
+    pause,
+    resume,
+    speaking,
+    paused,
+    supported,
+    voices,
+    error
+  } = useSpeechSynthesis({
+    rate,
+    pitch,
+    volume,
+    voice: selectedVoice
+  });
 
-    const loadVoices = () => {
-      const availableVoices = window.speechSynthesis.getVoices();
-      setVoices(availableVoices);
-      if (availableVoices.length > 0 && !selectedVoice) {
-        setSelectedVoice(availableVoices[0].voiceURI);
-      }
-    };
-
-    loadVoices();
-    
-    if (window.speechSynthesis.onvoiceschanged !== undefined) {
-      window.speechSynthesis.onvoiceschanged = loadVoices;
-    }
-
-    return () => {
-      window.speechSynthesis.cancel();
-    };
-  }, [selectedVoice]);
-
-  const speak = useCallback(() => {
+  const handleSpeak = () => {
     if (!text.trim()) {
-      setError('Please enter some text to speak.');
       return;
     }
+    speak(text);
+  };
 
-    setError(null);
-    window.speechSynthesis.cancel();
-
-    const utterance = new SpeechSynthesisUtterance(text);
-    
-    const voice = voices.find(v => v.voiceURI === selectedVoice);
-    if (voice) {
-      utterance.voice = voice;
-    }
-
-    utterance.rate = rate;
-    utterance.pitch = pitch;
-    utterance.volume = volume;
-
-    utterance.onstart = () => {
-      setIsSpeaking(true);
-      setIsPaused(false);
-    };
-
-    utterance.onend = () => {
-      setIsSpeaking(false);
-      setIsPaused(false);
-    };
-
-    utterance.onerror = (event) => {
-      setError(`Speech synthesis error: ${event.error}`);
-      setIsSpeaking(false);
-      setIsPaused(false);
-    };
-
-    window.speechSynthesis.speak(utterance);
-  }, [text, selectedVoice, rate, pitch, volume, voices]);
-
-  const pause = useCallback(() => {
-    window.speechSynthesis.pause();
-    setIsPaused(true);
-  }, []);
-
-  const resume = useCallback(() => {
-    window.speechSynthesis.resume();
-    setIsPaused(false);
-  }, []);
-
-  const stop = useCallback(() => {
-    window.speechSynthesis.cancel();
-    setIsSpeaking(false);
-    setIsPaused(false);
-  }, []);
+  const handleVoiceChange = (voiceURI: string) => {
+    const voice = voices.find(v => v.voiceURI === voiceURI) || null;
+    setSelectedVoice(voice);
+  };
 
   return (
     <div className="speech-synthesis">
       <h2>Speech Synthesis</h2>
       
-      {error && (
+      {!supported ? (
+        <div className="error-message" style={{ color: 'red', marginBottom: '1rem' }}>
+          Speech synthesis is not supported in this browser.
+        </div>
+      ) : error ? (
         <div className="error-message" style={{ color: 'red', marginBottom: '1rem' }}>
           {error}
         </div>
-      )}
+      ) : null}
 
       <div className="text-input" style={{ marginBottom: '1rem' }}>
         <label htmlFor="text-to-speak" style={{ display: 'block', marginBottom: '0.5rem' }}>
@@ -135,8 +77,8 @@ export const SpeechSynthesisComponent = () => {
         </label>
         <select
           id="voice-select"
-          value={selectedVoice}
-          onChange={(e) => setSelectedVoice(e.target.value)}
+          value={selectedVoice?.voiceURI || ''}
+          onChange={(e) => handleVoiceChange(e.target.value)}
           style={{
             width: '100%',
             padding: '0.5rem',
@@ -210,8 +152,8 @@ export const SpeechSynthesisComponent = () => {
 
       <div className="action-buttons" style={{ display: 'flex', gap: '1rem' }}>
         <button
-          onClick={speak}
-          disabled={isSpeaking && !isPaused}
+          onClick={handleSpeak}
+          disabled={speaking && !paused}
           style={{
             padding: '0.5rem 1rem',
             fontSize: '1rem',
@@ -220,13 +162,13 @@ export const SpeechSynthesisComponent = () => {
             border: 'none',
             borderRadius: '4px',
             cursor: 'pointer',
-            opacity: (isSpeaking && !isPaused) ? 0.5 : 1
+            opacity: (speaking && !paused) ? 0.5 : 1
           }}
         >
           Speak
         </button>
 
-        {isSpeaking && !isPaused && (
+        {speaking && !paused && (
           <button
             onClick={pause}
             style={{
@@ -243,7 +185,7 @@ export const SpeechSynthesisComponent = () => {
           </button>
         )}
 
-        {isSpeaking && isPaused && (
+        {speaking && paused && (
           <button
             onClick={resume}
             style={{
@@ -260,9 +202,9 @@ export const SpeechSynthesisComponent = () => {
           </button>
         )}
 
-        {isSpeaking && (
+        {speaking && (
           <button
-            onClick={stop}
+            onClick={cancel}
             style={{
               padding: '0.5rem 1rem',
               fontSize: '1rem',
@@ -280,7 +222,7 @@ export const SpeechSynthesisComponent = () => {
 
       <div className="status" style={{ marginTop: '1rem' }}>
         <strong>Status:</strong> {
-          isSpeaking ? (isPaused ? '⏸️ Paused' : '🔊 Speaking...') : '⚪ Ready'
+          speaking ? (paused ? '⏸️ Paused' : '🔊 Speaking...') : '⚪ Ready'
         }
       </div>
     </div>
